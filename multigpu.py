@@ -37,7 +37,7 @@ class onelayerCNN(nn.Module):
 
 
 def train(gpu):
-    target_gpu = 2
+    target_gpu = 0
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
 
@@ -46,7 +46,7 @@ def train(gpu):
     #model = onelayerCNN().to(gpu)
 
     
-    model = DDP(model, device_ids=[gpu], output_device=2)
+    model = DDP(model, device_ids=[gpu], output_device=0)
     
 
     transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
@@ -55,7 +55,7 @@ def train(gpu):
                                             download=True, transform=transform)
     train_sampler = torch.utils.data.distributed.DistributedSampler(trainset)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=32, sampler=train_sampler,
-                                              shuffle=False, num_workers=4)
+                                              shuffle=True, num_workers=4)
 
    
     criterion = nn.CrossEntropyLoss().to(gpu)
@@ -95,14 +95,14 @@ def init_process(gpu, size, fn, backend='nccl'):
     """ Initialize the distributed environment. """
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '8888'
-    dist.init_process_group(backend, rank=gpu-2, world_size=size)
+    dist.init_process_group(backend, rank=gpu, world_size=size)
     fn(gpu)
 
 if __name__=="__main__":
     processes = []
-    size =2
+    size = 4
     mp.set_start_method("spawn")
-    for gpu in [2,3]:
+    for gpu in [0,1,2,3]:
         p = mp.Process(target=init_process, args=(gpu, size, train))
         p.start()
         processes.append(p)

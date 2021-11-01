@@ -35,7 +35,7 @@ class onelayerCNN(nn.Module):
         return out
 
 def main():
-    gpu = 2
+    gpu = 0
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
     torch.cuda.set_device(gpu)
@@ -51,7 +51,7 @@ def main():
 
     train_sampler = torch.utils.data.SequentialSampler(subset)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=32, sampler=train_sampler,
-                                              shuffle=False, num_workers=4)
+                                              shuffle=True, num_workers=4)
    
     criterion = nn.CrossEntropyLoss().to(gpu)
    
