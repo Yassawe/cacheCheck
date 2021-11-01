@@ -33,7 +33,7 @@ class onelayerCNN(nn.Module):
 
 
 def train(gpu):
-    target_gpu = 0
+    target_gpu = 2
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
 
@@ -60,6 +60,7 @@ def train(gpu):
     
     model.train()
 
+    torch.cuda.cudart().cudaProfilerStart()
     for i, data in enumerate(trainloader, 0):
         print("step {}".format(i))
         
@@ -70,11 +71,12 @@ def train(gpu):
 
         optimizer.zero_grad()
 
+        print("BACKPROP STARTS HERE!!!")
+        torch.cuda.synchronize()
         if i==3 and gpu==target_gpu:
-            torch.cuda.cudart().cudaProfilerStart()
             with torch.autograd.profiler.emit_nvtx():
                 loss.backward()
-            torch.cuda.cudart().cudaProfilerStop()
+
         else:
             loss.backward()
         
@@ -83,6 +85,7 @@ def train(gpu):
 
         if (i + 1) > 3:
             break
+    torch.cuda.cudart().cudaProfilerStop()
 
 def init_process(gpu, size, fn, backend='nccl'):
     """ Initialize the distributed environment. """
@@ -92,10 +95,10 @@ def init_process(gpu, size, fn, backend='nccl'):
     fn(gpu)
 
 if __name__=="__main__":
-    size = 4
     processes = []
+    size =2
     mp.set_start_method("spawn")
-    for gpu in range(size):
+    for gpu in [2,3]:
         p = mp.Process(target=init_process, args=(gpu, size, train))
         p.start()
         processes.append(p)

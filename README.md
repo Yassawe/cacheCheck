@@ -8,3 +8,7 @@ ncu --devices 0 --target-processes all --csv --replay-mode application --export 
 4gpus:
 ncu --devices 0 --target-processes all --csv --replay-mode application --export ResNet50_4GPUStats --page details --log-file ResNet50_multiple.csv --nvtx --profile-from-start no --metrics lts__t_sector_hit_rate.pct /opt/conda/bin/python3 4gpu.py
 
+debug:
+ncu --kernel-name regex:'^((?!nccl).)*$' --devices 0 --target-processes all --replay-mode application --cache-control none --export ResNet50_4GPUStats --page details --nvtx --profile-from-start no --metrics lts__t_sector_hit_rate.pct /opt/conda/bin/python3 4gpu.py
+
+ncu --kernel-name regex:'^((?!nccl).)*$' --devices 2 --target-processes all --replay-mode application --cache-control none --export ResNet50_4GPUStats --page details --nvtx --profile-from-start no --metrics lts__t_sector_hit_rate.pct /opt/conda/bin/python3 4gpu.py
