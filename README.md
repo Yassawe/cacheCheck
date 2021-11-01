@@ -2,13 +2,4 @@ To profile l2 cache hit rate with ncu, do the following (just example):
 
 
 one gpu:
-ncu --devices 0 --target-processes all --csv --replay-mode application --export ResNet50_1GPUStats --page details --log-file ResNet50_single.csv --nvtx --profile-from-start no --metrics lts__t_sector_hit_rate.pct /opt/conda/bin/python3 onegpu.py
-
-
-4gpus:
-ncu --devices 0 --target-processes all --csv --replay-mode application --export ResNet50_4GPUStats --page details --log-file ResNet50_multiple.csv --nvtx --profile-from-start no --metrics lts__t_sector_hit_rate.pct /opt/conda/bin/python3 4gpu.py
-
-debug:
-ncu --kernel-name regex:'^((?!nccl).)*$' --devices 0 --target-processes all --replay-mode application --cache-control none --export ResNet50_4GPUStats --page details --nvtx --profile-from-start no --metrics lts__t_sector_hit_rate.pct /opt/conda/bin/python3 4gpu.py
-
-ncu --kernel-name regex:'^((?!nccl).)*$' --devices 2 --target-processes all --replay-mode application --cache-control none --export ResNet50_4GPUStats --page details --nvtx --profile-from-start no --metrics lts__t_sector_hit_rate.pct /opt/conda/bin/python3 4gpu.py
+nvprof --devices 2,3 --kernels '::^((?!nccl).)*$:' --profile-child-processes --profile-from-start off --skip-kernel-replay-save-restore on --concurrent-kernels on --metrics l2_tex_hit_rate --quiet --csv --log-file twogpus.csv python3 multigpu.py

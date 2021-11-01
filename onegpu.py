@@ -9,6 +9,11 @@ import torchvision
 import torchvision.models as models
 import torchvision.transforms as T
 
+
+import torch.cuda.profiler as profiler
+import pyprof
+pyprof.init()
+
 transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
 
 class onelayerCNN(nn.Module):
@@ -54,28 +59,28 @@ def main():
     
     model.train()
     
-    for i, data in enumerate(trainloader, 0):
-        print("step {}".format(i))
-        
-        inputs, labels = data[0].to(gpu), data[1].to(gpu)
-        
-        outputs = model(inputs)
-        loss = criterion(outputs, labels)
+    with torch.autograd.profiler.emit_nvtx():
+        for i, data in enumerate(trainloader, 0):
+            print("step {}".format(i))
+            
+            inputs, labels = data[0].to(gpu), data[1].to(gpu)
+            
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
 
-        optimizer.zero_grad()
+            optimizer.zero_grad()
 
-        if i==3:
-            torch.cuda.cudart().cudaProfilerStart()
-            with torch.autograd.profiler.emit_nvtx():
+            if i==3:
+                profiler.start()
                 loss.backward()
-            torch.cuda.cudart().cudaProfilerStop()
-        else:
-            loss.backward()
+                profiler.stop()
+            else:
+                loss.backward()
+            
+            optimizer.step()
 
-        optimizer.step()
-
-        if i > 3:
-            break
+            if (i + 1) > 3:
+                break
 
 
 if __name__=="__main__":

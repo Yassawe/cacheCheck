@@ -13,6 +13,10 @@ import torchvision.transforms as T
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 
+import torch.cuda.profiler as profiler
+import pyprof
+pyprof.init()
+
 class onelayerCNN(nn.Module):
 
     def __init__(self, num_classes=10):
@@ -42,7 +46,7 @@ def train(gpu):
     #model = onelayerCNN().to(gpu)
 
     
-    model = DDP(model, device_ids=[gpu], broadcast_buffers=False, bucket_cap_mb=0)
+    model = DDP(model, device_ids=[gpu], output_device=2)
     
 
     transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
@@ -60,38 +64,38 @@ def train(gpu):
     
     model.train()
 
-    torch.cuda.cudart().cudaProfilerStart()
-    for i, data in enumerate(trainloader, 0):
-        print("step {}".format(i))
-        
-        inputs, labels = data[0].to(gpu), data[1].to(gpu)
-        
-        outputs = model(inputs)
-        loss = criterion(outputs, labels)
+    with torch.autograd.profiler.emit_nvtx():
+        for i, data in enumerate(trainloader, 0):
+            print("step {}".format(i))
+            
+            inputs, labels = data[0].to(gpu), data[1].to(gpu)
+            
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
 
-        optimizer.zero_grad()
+            optimizer.zero_grad()
 
-        print("BACKPROP STARTS HERE!!!")
-        torch.cuda.synchronize()
-        if i==3 and gpu==target_gpu:
-            with torch.autograd.profiler.emit_nvtx():
+            if i==3 and gpu==target_gpu:
+                #torch.cuda.cudart().cudaProfilerStart()
+                profiler.start()
                 loss.backward()
+                torch.cuda.synchronize()
+                profiler.stop()
+                #torch.cuda.cudart().cudaProfilerStop()
+            else:
+                loss.backward()
+            
+            optimizer.step()
 
-        else:
-            loss.backward()
-        
-
-        optimizer.step()
-
-        if (i + 1) > 3:
-            break
-    torch.cuda.cudart().cudaProfilerStop()
+            if (i + 1) > 3:
+                break
+    
 
 def init_process(gpu, size, fn, backend='nccl'):
     """ Initialize the distributed environment. """
-    os.environ['MASTER_ADDR'] = '127.0.0.1'
-    os.environ['MASTER_PORT'] = '29500'
-    dist.init_process_group(backend, rank=gpu, world_size=size)
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '8888'
+    dist.init_process_group(backend, rank=gpu-2, world_size=size)
     fn(gpu)
 
 if __name__=="__main__":
