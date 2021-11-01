@@ -38,8 +38,8 @@ def main():
     
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
-    train_sampler = torch.utils.data.distributed.DistributedSampler(trainset)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=32, sampler=train_sampler,
+    train_sampler = torch.utils.data.SequentialSampler(trainset)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=32*4, sampler=train_sampler,
                                               shuffle=False, num_workers=4)
 
    
@@ -58,9 +58,11 @@ def main():
 
         optimizer.zero_grad()
 
-        torch.cuda.nvtx.range_push("BACKPROP")
+        if i>2: #3 iterations warmup
+            torch.cuda.nvtx.range_push("BACKPROP")
         loss.backward()
-        torch.cuda.nvtx.range_pop("BACKPROP")
+        if i>2:
+            torch.cuda.nvtx.range_pop("BACKPROP")
         optimizer.step()
 
         if (i + 1) >= 10:
