@@ -1,7 +1,3 @@
-==14632== NVPROF is profiling process 14632, command: /opt/conda/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=5, pipe_handle=7) --multiprocessing-fork
-==14632== Some kernel(s) will be replayed on device 2 in order to collect all events/metrics.
-==14632== Profiling application: /opt/conda/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=5, pipe_handle=7) --multiprocessing-fork
-==14632== Profiling result:
 "Device","Context","Stream","Kernel","Correlation_ID","l2_tex_hit_rate"
 ,,,,,%
 "Tesla V100-DGXS-32GB (2)","1","7","void at::native::vectorized_elementwise_kernel<int=4, at::native::FillFunctor<float>, at::detail::Array<char*, int=1>>(int, float, at::native::FillFunctor<float>)",6721,100.000000
