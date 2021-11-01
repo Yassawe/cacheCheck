@@ -32,24 +32,28 @@ class onelayerCNN(nn.Module):
 def main():
     gpu = 0
     torch.cuda.set_device(gpu)
+    
     model = models.vgg16(pretrained=True).to(gpu)
-    #model = onelayerCNN().to(gpu)
 
+    #model = onelayerCNN().to(gpu)
     
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
     train_sampler = torch.utils.data.SequentialSampler(trainset)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=32*4, sampler=train_sampler,
                                               shuffle=False, num_workers=4)
-
    
     criterion = nn.CrossEntropyLoss().to(gpu)
    
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     
     model.train()
+    
+    print("starting")
 
+    rangename = "BACKPROP0"
     for i, data in enumerate(trainloader, 0):
+        print("step {}".format(i))
         
         inputs, labels = data[0].to(gpu), data[1].to(gpu)
         
@@ -58,14 +62,13 @@ def main():
 
         optimizer.zero_grad()
 
-        if i>2: #3 iterations warmup
-            torch.cuda.nvtx.range_push("BACKPROP")
-        loss.backward()
-        if i>2:
-            torch.cuda.nvtx.range_pop("BACKPROP")
+        if i==3:
+            with torch.autograd.profiler.emit_nvtx():
+                loss.backward()
+                
         optimizer.step()
 
-        if (i + 1) >= 10:
+        if i > 3:
             break
 
 

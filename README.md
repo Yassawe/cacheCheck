@@ -1,6 +1,6 @@
-To profile l2 cache hit rate with ncu, do the following:
+To profile l2 cache hit rate with ncu, do the following (just example):
 
-ncu --devices *[list of devices]* --target-processes all --csv -o *[output file name]* --nvtx --nvtx-include *[list of NVTX ranges]* --metrics lts__t_sector_hit_rate.pct /opt/conda/bin/python3 *[your pytorch program]*
+ncu --devices 0 --target-processes all --csv -o oneGPUStats --nvtx --profile-from-start no --metrics lts__t_sector_hit_rate.pct /opt/conda/bin/python3 onegpu.py
 
 Inside the python script, you can use 
 torch.cuda.nvtx.range_push and torch.cuda.nvtx.range_pop
