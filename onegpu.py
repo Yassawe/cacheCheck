@@ -35,7 +35,7 @@ class onelayerCNN(nn.Module):
         return out
 
 def main():
-    gpu = 0
+    gpu = 2
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
     torch.cuda.set_device(gpu)
