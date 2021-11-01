@@ -1,7 +1,3 @@
-==15485== NVPROF is profiling process 15485, command: python3 onegpu.py
-==15485== Some kernel(s) will be replayed on device 2 in order to collect all events/metrics.
-==15485== Profiling application: python3 onegpu.py
-==15485== Profiling result:
 "Device","Context","Stream","Kernel","Correlation_ID","l2_tex_hit_rate"
 ,,,,,%
 "Tesla V100-DGXS-32GB (2)","1","7","void at::native::vectorized_elementwise_kernel<int=4, at::native::FillFunctor<float>, at::detail::Array<char*, int=1>>(int, float, at::native::FillFunctor<float>)",4746,0.000000
