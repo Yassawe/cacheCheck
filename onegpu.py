@@ -30,10 +30,10 @@ class onelayerCNN(nn.Module):
         return out
 
 def main():
-    gpu = 0
+    gpu = 1
     torch.cuda.set_device(gpu)
     
-    model = models.vgg16(pretrained=True).to(gpu)
+    model = models.resnet50(pretrained=True).to(gpu)
 
     #model = onelayerCNN().to(gpu)
     
@@ -51,7 +51,6 @@ def main():
     
     print("starting")
 
-    rangename = "BACKPROP0"
     for i, data in enumerate(trainloader, 0):
         print("step {}".format(i))
         
@@ -63,9 +62,13 @@ def main():
         optimizer.zero_grad()
 
         if i==3:
+            torch.cuda.cudart().cudaProfilerStart()
             with torch.autograd.profiler.emit_nvtx():
                 loss.backward()
-                
+            torch.cuda.cudart().cudaProfilerStop()
+        else:
+            loss.backward()
+            
         optimizer.step()
 
         if i > 3:
