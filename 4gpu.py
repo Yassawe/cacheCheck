@@ -54,6 +54,8 @@ def train(gpu):
     criterion = nn.CrossEntropyLoss().to(gpu)
    
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    
+    rangename = "BACKPROP" + str(gpu)
     model.train()
 
   
@@ -66,9 +68,9 @@ def train(gpu):
 
         optimizer.zero_grad()
 
-        torch.cuda.nvtx.range_push("BACKPROP")
+        torch.cuda.nvtx.range_push(rangename)
         loss.backward()
-        torch.cuda.nvtx.range_pop("BACKPROP")
+        torch.cuda.nvtx.range_pop(rangename)
 
         optimizer.step()
 
