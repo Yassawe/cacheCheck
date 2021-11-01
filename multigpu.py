@@ -55,7 +55,7 @@ def train(gpu):
                                             download=True, transform=transform)
     train_sampler = torch.utils.data.distributed.DistributedSampler(trainset)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=32, sampler=train_sampler,
-                                              shuffle=True, num_workers=4)
+                                              shuffle=False, num_workers=4)
 
    
     criterion = nn.CrossEntropyLoss().to(gpu)
