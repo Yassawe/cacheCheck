@@ -30,7 +30,9 @@ class onelayerCNN(nn.Module):
         return out
 
 def main():
-    gpu = 1
+    gpu = 0
+    torch.manual_seed(0)
+    torch.cuda.manual_seed(0)
     torch.cuda.set_device(gpu)
     
     model = models.resnet50(pretrained=True).to(gpu)
@@ -39,7 +41,7 @@ def main():
     
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
-                                            
+
     subset = torch.utils.data.Subset(trainset, list(range(int(len(trainset)/4))))
 
     train_sampler = torch.utils.data.SequentialSampler(subset)
@@ -52,8 +54,6 @@ def main():
     
     model.train()
     
-    print("starting")
-
     for i, data in enumerate(trainloader, 0):
         print("step {}".format(i))
         
