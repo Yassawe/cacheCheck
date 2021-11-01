@@ -39,8 +39,11 @@ def main():
     
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
-    train_sampler = torch.utils.data.SequentialSampler(trainset)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=32*4, sampler=train_sampler,
+                                            
+    subset = torch.utils.data.Subset(trainset, list(range(int(len(trainset)/4))))
+
+    train_sampler = torch.utils.data.SequentialSampler(subset)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=32, sampler=train_sampler,
                                               shuffle=False, num_workers=4)
    
     criterion = nn.CrossEntropyLoss().to(gpu)
@@ -68,7 +71,7 @@ def main():
             torch.cuda.cudart().cudaProfilerStop()
         else:
             loss.backward()
-            
+
         optimizer.step()
 
         if i > 3:
