@@ -1,4 +1,4 @@
-To profile l2 cache hit rate with nvprof, do the following (just example):
+To profile l2 cache hit rate with ncu, do the following (just example):
 
 
 one gpu:
