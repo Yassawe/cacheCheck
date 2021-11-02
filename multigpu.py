@@ -42,7 +42,7 @@ def train(gpu):
     torch.cuda.manual_seed(0)
 
     torch.cuda.set_device(gpu)
-    model = models.resnet50(pretrained=True).to(gpu)
+    model = models.resnet152(pretrained=True).to(gpu)
     #model = onelayerCNN().to(gpu)
 
     
@@ -76,18 +76,17 @@ def train(gpu):
             optimizer.zero_grad()
 
             if i==3 and gpu==target_gpu:
-                #torch.cuda.cudart().cudaProfilerStart()
                 profiler.start()
-                loss.backward()
-                torch.cuda.synchronize()
+                
+            loss.backward()
+            torch.cuda.synchronize()
+
+            if i==3 and gpu==target_gpu:
                 profiler.stop()
-                #torch.cuda.cudart().cudaProfilerStop()
-            else:
-                loss.backward()
-            
+
             optimizer.step()
 
-            if (i + 1) > 3:
+            if i > 3:
                 break
     
 
