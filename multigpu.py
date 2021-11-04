@@ -64,30 +64,58 @@ def train(gpu):
     
     model.train()
 
-    with torch.autograd.profiler.emit_nvtx():
-        for i, data in enumerate(trainloader, 0):
-            print("step {}".format(i))
-            
-            inputs, labels = data[0].to(gpu), data[1].to(gpu)
-            
+    flag = False
+    for i, data in enumerate(trainloader, 0):
+        print("step {}".format(i))
+        
+        inputs, labels = data[0].to(gpu), data[1].to(gpu)
+        
+        if i==5 and gpu==target_gpu:
+            profiler.start()
+            flag=True
+        
+        with torch.autograd.profiler.emit_nvtx(enabled=flag):
             outputs = model(inputs)
             loss = criterion(outputs, labels)
 
-            optimizer.zero_grad()
+        optimizer.zero_grad()
 
-            if i==3 and gpu==target_gpu:
-                profiler.start()
-                
+        with torch.autograd.profiler.emit_nvtx(enabled=flag):
             loss.backward()
-            torch.cuda.synchronize()
+        
+        if i==5 and gpu==target_gpu:
+            profiler.stop()
+            flag=False
+        
+        optimizer.step()
 
-            if i==3 and gpu==target_gpu:
-                profiler.stop()
+        if i > 5:
+            break
 
-            optimizer.step()
+    # with torch.autograd.profiler.emit_nvtx():
+    #     for i, data in enumerate(trainloader, 0):
+    #         print("step {}".format(i))
+            
+    #         inputs, labels = data[0].to(gpu), data[1].to(gpu)
+            
+    #         outputs = model(inputs)
+    #         loss = criterion(outputs, labels)
 
-            if i > 3:
-                break
+    #         optimizer.zero_grad()
+
+    #         if i==3 and gpu==target_gpu:
+    #             profiler.start()
+                
+    #         loss.backward()
+    #         torch.cuda.synchronize()
+
+    #         if i==3 and gpu==target_gpu:
+    #             profiler.stop()
+
+    #         optimizer.step()
+
+    #         if i > 3:
+    #             break
     
 
 def init_process(gpu, size, fn, backend='nccl'):

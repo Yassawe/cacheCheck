@@ -40,7 +40,8 @@ def main():
     torch.cuda.manual_seed(0)
     torch.cuda.set_device(gpu)
     
-    model = models.resnet152(pretrained=True).to(gpu)
+    #model = models.resnet152(pretrained=True).to(gpu)
+    model = models.vgg16(pretrained=True).to(gpu)
 
     #model = onelayerCNN().to(gpu)
     
@@ -59,30 +60,33 @@ def main():
     
     model.train()
     
-    with torch.autograd.profiler.emit_nvtx():
-        for i, data in enumerate(trainloader, 0):
-            print("step {}".format(i))
-            
-            inputs, labels = data[0].to(gpu), data[1].to(gpu)
-            
+    flag = False
+    for i, data in enumerate(trainloader, 0):
+        print("step {}".format(i))
+        
+        inputs, labels = data[0].to(gpu), data[1].to(gpu)
+        
+        if i==5:
+            profiler.start()
+            flag=True
+        
+        with torch.autograd.profiler.emit_nvtx(enabled=flag):
             outputs = model(inputs)
             loss = criterion(outputs, labels)
 
-            optimizer.zero_grad()
+        optimizer.zero_grad()
 
-            if i==3:
-                profiler.start()
-            
+        with torch.autograd.profiler.emit_nvtx(enabled=flag):
             loss.backward()
-            torch.cuda.synchronize()
+        
+        if i==5:
+            profiler.stop()
+            flag=False
+        
+        optimizer.step()
 
-            if i==3:
-                profiler.stop()
-            
-            optimizer.step()
-
-            if i > 3:
-                break
+        if i > 5:
+            break
 
 
 if __name__=="__main__":
