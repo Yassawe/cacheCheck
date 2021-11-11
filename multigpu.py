@@ -14,8 +14,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 
 import torch.cuda.profiler as profiler
-import pyprof
-pyprof.init()
+# import pyprof
+# pyprof.init()
 
 class onelayerCNN(nn.Module):
 
