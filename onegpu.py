@@ -11,8 +11,8 @@ import torchvision.transforms as T
 
 
 import torch.cuda.profiler as profiler
-import pyprof
-pyprof.init()
+# import pyprof
+# pyprof.init()
 
 transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
 
