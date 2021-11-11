@@ -73,8 +73,16 @@ def main():
         with torch.autograd.profiler.emit_nvtx(enabled=flag):
             outputs = model(inputs)
             loss = criterion(outputs, labels)
+        
+        if i==5:
+            profiler.stop()
+            flag=False
 
         optimizer.zero_grad()
+
+        if i==5:
+            profiler.start()
+            flag=True
 
         with torch.autograd.profiler.emit_nvtx(enabled=flag):
             loss.backward()
@@ -84,6 +92,7 @@ def main():
             flag=False
         
         optimizer.step()
+
 
         if i > 5:
             break

@@ -37,16 +37,15 @@ class onelayerCNN(nn.Module):
 
 
 def train(gpu):
-    target_gpu = 0
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
 
     torch.cuda.set_device(gpu)
-    model = models.resnet152(pretrained=True).to(gpu)
+    model = models.vgg16(pretrained=True).to(gpu)
     #model = onelayerCNN().to(gpu)
 
     
-    model = DDP(model, device_ids=[gpu], output_device=0)
+    model = DDP(model, device_ids=[gpu], output_device=0, broadcast_buffers=False, bucket_cap_mb=25) #REPLACE THIS LINE
     
 
     transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
@@ -55,7 +54,7 @@ def train(gpu):
                                             download=True, transform=transform)
     train_sampler = torch.utils.data.distributed.DistributedSampler(trainset)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=32, sampler=train_sampler,
-                                              shuffle=False, num_workers=4)
+                                              shuffle=False, num_workers=0)
 
    
     criterion = nn.CrossEntropyLoss().to(gpu)
@@ -65,57 +64,46 @@ def train(gpu):
     model.train()
 
     flag = False
+    target_gpu = 0
+    target_iter1 = 5
+    target_iter2 = 5
     for i, data in enumerate(trainloader, 0):
         print("step {}".format(i))
         
         inputs, labels = data[0].to(gpu), data[1].to(gpu)
         
-        if i==5 and gpu==target_gpu:
+        
+        if (i==target_iter1 or i==target_iter2) and gpu==target_gpu:
             profiler.start()
             flag=True
-        
+
         with torch.autograd.profiler.emit_nvtx(enabled=flag):
             outputs = model(inputs)
             loss = criterion(outputs, labels)
 
+        if (i==target_iter1 or i==target_iter2) and gpu==target_gpu:
+            profiler.stop()
+            flag=False
+        
         optimizer.zero_grad()
+
+        if (i==target_iter1 or i==target_iter2) and gpu==target_gpu:
+            profiler.start()
+            flag=True
 
         with torch.autograd.profiler.emit_nvtx(enabled=flag):
             loss.backward()
         
-        if i==5 and gpu==target_gpu:
+        if (i==target_iter1 or i==target_iter2) and gpu==target_gpu:
             profiler.stop()
             flag=False
         
         optimizer.step()
 
-        if i > 5:
+        torch.cuda.synchronize()
+
+        if i == 5:
             break
-
-    # with torch.autograd.profiler.emit_nvtx():
-    #     for i, data in enumerate(trainloader, 0):
-    #         print("step {}".format(i))
-            
-    #         inputs, labels = data[0].to(gpu), data[1].to(gpu)
-            
-    #         outputs = model(inputs)
-    #         loss = criterion(outputs, labels)
-
-    #         optimizer.zero_grad()
-
-    #         if i==3 and gpu==target_gpu:
-    #             profiler.start()
-                
-    #         loss.backward()
-    #         torch.cuda.synchronize()
-
-    #         if i==3 and gpu==target_gpu:
-    #             profiler.stop()
-
-    #         optimizer.step()
-
-    #         if i > 3:
-    #             break
     
 
 def init_process(gpu, size, fn, backend='nccl'):
