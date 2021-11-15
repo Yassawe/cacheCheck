@@ -12,7 +12,6 @@ import torchvision.models as models
 import torchvision.transforms as T
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-
 import torch.cuda.profiler as profiler
 
 class onelayerCNN(nn.Module):
@@ -39,7 +38,8 @@ def train(gpu):
     torch.cuda.manual_seed(0)
 
     torch.cuda.set_device(gpu)
-    model = models.vgg16(pretrained=True).to(gpu)
+    model = models.vgg16(pretrained=False).to(gpu)
+    #model = models.resnet50(pretrained=False).to(gpu)
     #model = onelayerCNN().to(gpu)
 
     

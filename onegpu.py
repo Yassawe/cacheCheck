@@ -11,8 +11,6 @@ import torchvision.transforms as T
 
 
 import torch.cuda.profiler as profiler
-# import pyprof
-# pyprof.init()
 
 transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
 
@@ -40,8 +38,8 @@ def main():
     torch.cuda.manual_seed(0)
     torch.cuda.set_device(gpu)
     
-    #model = models.resnet152(pretrained=True).to(gpu)
-    model = models.vgg16(pretrained=True).to(gpu)
+    #model = models.resnet50(pretrained=False).to(gpu)
+    model = models.vgg16(pretrained=False).to(gpu)
 
     #model = onelayerCNN().to(gpu)
     
