@@ -3,17 +3,13 @@
 
 one gpu:
 
-nvprof --devices 0 --kernels '^((?!nccl).)*$' --profile-child-processes --print-gpu-trace --profile-from-start off --concurrent-kernels on --metrics l2_tex_read_transactions,l2_utilization,l2_tex_read_hit_rate --csv --log-file ./csv/nvprof_onegpu_vgg_entire%p.csv python3 onegpu.py
-
-ncu --devices 0 --target-processes all --csv --replay-mode application --page details --log-file onegpu_entire_vgg16.csv --nvtx --profile-from-start no --metrics lts__t_sectors_srcunit_tex_op_read.sum,lts__t_sector_op_read_hit_rate.pct,lts__t_sectors.avg.pct_of_peak_sustained_elapsed python3 onegpu.py
-
-
+nvprof --devices 1 --kernels '^((?!nccl).)*$' --profile-child-processes --print-gpu-trace --normalized-time-unit ms --profile-from-start off --concurrent-kernels on --metrics l2_tex_read_hit_rate,l2_tex_write_hit_rate,l2_tex_read_transactions,l2_tex_write_transactions --csv --log-file ./csv/resnet50/one%p.csv python3 onegpu.py
 
 multi gpu:
 
-nvprof --devices 0,1,2,3 --kernels '^((?!nccl).)*$' --profile-child-processes --profile-from-start off --concurrent-kernels on --metrics l2_tex_read_transactions,l2_tex_read_hit_rate,l2_tex_write_transactions,l2_tex_write_hit_rate --csv --print-gpu-trace --trace gpu --normalized-time-unit ms --log-file ./csv/multigpu%p.csv python3 multigpu.py
+nvprof --devices 1 --kernels '^((?!nccl).)*$' --profile-child-processes --print-gpu-trace --normalized-time-unit ms --profile-from-start off --concurrent-kernels on --metrics l2_tex_read_hit_rate,l2_tex_write_hit_rate,l2_tex_read_transactions,l2_tex_write_transactions --csv --log-file ./csv/resnet50/multi%p.csv python3 multigpu.py
 
-
+________________________________________________
 
 
 '^((?!nccl).)*$'
@@ -40,10 +36,33 @@ dram_read_bytes
 dram_write_bytes
 
 
-current work:
-
 nvprof --devices 0,1,2,3 --kernels '^((?!nccl).)*$' --profile-child-processes --profile-from-start off --concurrent-kernels on --metrics l2_tex_read_hit_rate,l2_tex_read_transactions,l2_tex_write_hit_rate,l2_tex_write_transactions --csv --print-gpu-trace --trace gpu --normalized-time-unit ms --log-file ./csv/l12_one_resnet50%p.csv python3 onegpu.py
 
 
 nvprof --devices 0,1,2,3 --kernels '^((?!nccl).)*$' --profile-child-processes --profile-from-start off --concurrent-kernels on --metrics l2_tex_read_hit_rate,l2_tex_read_transactions,l2_tex_write_hit_rate,l2_tex_write_transactions --csv --print-gpu-trace --trace gpu --normalized-time-unit ms --log-file ./csv/l12_multi_resnet50%p.csv python3 multigpu.py
 
+______
+
+nvprof --devices 0,1,2,3 --kernels '^((?!nccl).)*$' --profile-child-processes --profile-from-start off --concurrent-kernels on --metrics l2_read_transactions,l2_global_load_bytes,l2_local_load_bytes,l2_surface_load_bytes --csv --print-gpu-trace --trace gpu --normalized-time-unit ms --log-file ./csv/bytes_check%p.csv python3 onegpu.py
+
+
+events: all you need to know to find hit rate
+
+sector 0 of L2:
+
+l2_subp0_write_sector_misses
+l2_subp0_read_sector_misses
+
+l2_subp0_total_read_sector_queries
+l2_subp0_total_write_sector_queries
+
+sector 1 of L2:
+
+l2_subp1_write_sector_misses
+l2_subp1_read_sector_misses
+
+l2_subp1_total_read_sector_queries
+l2_subp1_total_write_sector_queries
+
+
+_________

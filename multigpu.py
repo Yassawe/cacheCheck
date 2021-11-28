@@ -14,34 +14,14 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 import torch.cuda.profiler as profiler
 
-class onelayerCNN(nn.Module):
-
-    def __init__(self, num_classes=10):
-        super(onelayerCNN, self).__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(3, 8, kernel_size=33, stride=1, padding=16),
-            nn.BatchNorm2d(8),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2))
-
-        self.fc = nn.Linear(112*112*8, num_classes)
-
-    def forward(self, x):
-        out = self.layer1(x)
-        out = out.reshape(out.size(0), -1)
-        out = self.fc(out)
-        return out
-
 
 def train(gpu):
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
 
     torch.cuda.set_device(gpu)
-    model = models.vgg16(pretrained=False).to(gpu)
-    #model = models.resnet50(pretrained=False).to(gpu)
-    #model = onelayerCNN().to(gpu)
 
+    model = models.resnet50(pretrained=False).to(gpu)
     
     model = DDP(model, device_ids=[gpu], output_device=0, broadcast_buffers=False, bucket_cap_mb=25) #REPLACE THIS LINE
     
@@ -62,7 +42,7 @@ def train(gpu):
     model.train()
 
     flag = False
-    target_gpu = 0
+    target_gpu = 1
     target_iter1 = 5
     target_iter2 = 5
     for i, data in enumerate(trainloader, 0):
@@ -98,9 +78,7 @@ def train(gpu):
         
         optimizer.step()
 
-        torch.cuda.synchronize()
-
-        if i == 5:
+        if i > 5:
             break
     
 
