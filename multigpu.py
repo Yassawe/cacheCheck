@@ -21,7 +21,7 @@ def train(gpu):
 
     torch.cuda.set_device(gpu)
 
-    model = models.resnet50(pretrained=False).to(gpu)
+    model = models.resnet101(pretrained=False).to(gpu)
     
     model = DDP(model, device_ids=[gpu], output_device=0, broadcast_buffers=False, bucket_cap_mb=25) #REPLACE THIS LINE
     
@@ -44,35 +44,23 @@ def train(gpu):
     flag = False
     target_gpu = 1
     target_iter1 = 5
-    target_iter2 = 5
     for i, data in enumerate(trainloader, 0):
-        print("step {}".format(i))
+        print("step {}, gpu {}".format(i, gpu))
         
         inputs, labels = data[0].to(gpu), data[1].to(gpu)
-        
-        
-        if (i==target_iter1 or i==target_iter2) and gpu==target_gpu:
-            profiler.start()
-            flag=True
+        outputs = model(inputs)
+        loss = criterion(outputs, labels)
 
-        with torch.autograd.profiler.emit_nvtx(enabled=flag):
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-
-        if (i==target_iter1 or i==target_iter2) and gpu==target_gpu:
-            profiler.stop()
-            flag=False
-        
         optimizer.zero_grad()
 
-        if (i==target_iter1 or i==target_iter2) and gpu==target_gpu:
+        if i==target_iter1 and gpu==target_gpu:
             profiler.start()
             flag=True
 
         with torch.autograd.profiler.emit_nvtx(enabled=flag):
             loss.backward()
         
-        if (i==target_iter1 or i==target_iter2) and gpu==target_gpu:
+        if i==target_iter1 and gpu==target_gpu:
             profiler.stop()
             flag=False
         

@@ -21,7 +21,7 @@ def main():
     torch.cuda.manual_seed(0)
     torch.cuda.set_device(gpu)
     
-    model = models.resnet50(pretrained=False).to(gpu)
+    model = models.resnet101(pretrained=False).to(gpu)
     
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
@@ -44,17 +44,10 @@ def main():
         
         inputs, labels = data[0].to(gpu), data[1].to(gpu)
         
-        if i==5:
-            profiler.start()
-            flag=True
         
-        with torch.autograd.profiler.emit_nvtx(enabled=flag):
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-        
-        if i==5:
-            profiler.stop()
-            flag=False
+       
+        outputs = model(inputs)
+        loss = criterion(outputs, labels)
 
         optimizer.zero_grad()
 
@@ -70,7 +63,6 @@ def main():
             flag=False
         
         optimizer.step()
-
 
         if i > 5:
             break
