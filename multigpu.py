@@ -21,7 +21,7 @@ def train(gpu):
 
     torch.cuda.set_device(gpu)
 
-    model = models.resnet101(pretrained=False).to(gpu)
+    model = models.vgg16(pretrained=False).to(gpu)
     
     model = DDP(model, device_ids=[gpu], output_device=0, broadcast_buffers=False, bucket_cap_mb=25) #REPLACE THIS LINE
     

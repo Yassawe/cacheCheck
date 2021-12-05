@@ -10,25 +10,6 @@ pyprof.init()
 
 tr = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
 
-class onelayerCNN(nn.Module):
-
-    def __init__(self, num_classes=10):
-        super().__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(3, 8, kernel_size=5, stride=1, padding=2),
-            nn.BatchNorm2d(8),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2))
-
-        self.fc = nn.Linear(112*112*8, num_classes)
-
-    def forward(self, x):
-        out = self.layer1(x)
-        out = out.reshape(out.size(0), -1)
-        out = self.fc(out)
-        return out
-
- 
 
 def main():
     torch.manual_seed(0)

@@ -21,7 +21,7 @@ def main():
     torch.cuda.manual_seed(0)
     torch.cuda.set_device(gpu)
     
-    model = models.resnet101(pretrained=False).to(gpu)
+    model = models.vgg16(pretrained=False).to(gpu)
     
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
