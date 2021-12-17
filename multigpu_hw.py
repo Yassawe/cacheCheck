@@ -11,11 +11,18 @@ import torchvision
 import torchvision.models as models
 import torchvision.transforms as T
 from torch.nn.parallel import DistributedDataParallel as DDP
+import time
+import threading
+import _thread
 
-import torch.cuda.profiler as profiler
+# import torch.cuda.profiler as profiler
 
 
 def train(gpu):
+
+    BUCKET_SIZE = 25
+    BATCH_SIZE = 32
+
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
 
@@ -23,7 +30,7 @@ def train(gpu):
 
     model = models.vgg16(pretrained=False).to(gpu)
     
-    model = DDP(model, device_ids=[gpu], output_device=0, broadcast_buffers=True, bucket_cap_mb=800) #REPLACE THIS LINE
+    model = DDP(model, device_ids=[gpu], output_device=0, bucket_cap_mb=BUCKET_SIZE)
     
 
     transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
@@ -31,7 +38,7 @@ def train(gpu):
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
     train_sampler = torch.utils.data.distributed.DistributedSampler(trainset)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=32, sampler=train_sampler,
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=BATCH_SIZE, sampler=train_sampler,
                                               shuffle=False, num_workers=0)
 
    
@@ -41,34 +48,36 @@ def train(gpu):
     
     model.train()
 
-    flag = False
-    target_gpu = 1
-    target_iter1 = 5
+    target_gpu = 0
+    target_iter = 5
     for i, data in enumerate(trainloader, 0):
-        print("step {}, gpu {}".format(i, gpu))
-        
+
+        if gpu == target_gpu:
+            print("step {}, gpu {}".format(i, gpu))
+
+
         inputs, labels = data[0].to(gpu), data[1].to(gpu)
         outputs = model(inputs)
         loss = criterion(outputs, labels)
 
         optimizer.zero_grad()
 
-        if i==target_iter1 and gpu==target_gpu:
-            profiler.start()
-            flag=True
-
-        with torch.autograd.profiler.emit_nvtx(enabled=flag):
-            loss.backward()
+        if i==target_iter and gpu==target_gpu:
+            _thread.start_new_thread(os.system, ('./executables/hardware_counter',))
+            time.sleep(5)
         
-        if i==target_iter1 and gpu==target_gpu:
-            profiler.stop()
-            flag=False
+        loss.backward()
         
         optimizer.step()
 
-        if i > 5:
+        if i==target_iter:
+            print("done. gpu{}".format(gpu))
+        
+        torch.cuda.synchronize(device=gpu)
+
+        if i == 5:
             break
-    
+    #join a thread
 
 def init_process(gpu, size, fn, backend='nccl'):
     """ Initialize the distributed environment. """

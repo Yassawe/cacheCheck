@@ -3,31 +3,8 @@
 #include <cupti_events.h>
 #include <unistd.h>
 
-
-#define CHECK_CU_ERROR(err, cufunc)                                     \
-  if (err != CUDA_SUCCESS)                                              \
-    {                                                                   \
-      printf ("Error %d for CUDA Driver API function '%s'.\n",          \
-              err, cufunc);                                             \
-      exit(-1);                                                         \
-    }
-
-#define CHECK_CUPTI_ERROR(err, cuptifunc)                       \
-  if (err != CUPTI_SUCCESS)                                     \
-    {                                                           \
-      const char *errstr;                                       \
-      cuptiGetResultString(err, &errstr);                       \
-      printf ("%s:%d:Error %s for CUPTI API function '%s'.\n",  \
-              __FILE__, __LINE__, errstr, cuptifunc);           \
-      exit(-1);                                                 \
-    }
-
-
 int main(int argc, char *argv[])
 {
-
-  CUptiResult cuptiErr;
-
   CUcontext context;
   CUdevice device;
   CUpti_EventGroup eventGroup;
@@ -63,11 +40,10 @@ int main(int argc, char *argv[])
   }
 
   cuInit(0);
-  
+
   cuDeviceGet(&device, deviceNum);
 
-  cuCtxCreate(&context, 0, device);
-
+  cuDevicePrimaryCtxRetain(&context, device);
 
   cuptiSetEventCollectionMode(context, CUPTI_EVENT_COLLECTION_MODE_CONTINUOUS);
 
