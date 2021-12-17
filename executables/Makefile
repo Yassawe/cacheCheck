@@ -1,12 +1,9 @@
-#
-# Copyright 2011-2021 NVIDIA Corporation. All rights reserved
-#
 ifndef OS
  OS   := $(shell uname)
  HOST_ARCH := $(shell uname -m)
 endif
 
-CUDA_INSTALL_PATH ?= ../../../..
+CUDA_INSTALL_PATH ?= /usr/local/cuda-11.5
 NVCC := "$(CUDA_INSTALL_PATH)/bin/nvcc"
 INCLUDES := -I"$(CUDA_INSTALL_PATH)/include" -I../../include
 
@@ -73,18 +70,18 @@ ifneq ($(TARGET_ARCH), $(HOST_ARCH))
 endif
 
 # Gencode arguments
-SMS ?= 35 37 50 52 53 60 61 62 70 72
+SMS ?= 70 72
 # Generate SASS code for each SM architecture listed in $(SMS)
 $(foreach sm,$(SMS),$(eval GENCODE_FLAGS += -gencode arch=compute_$(sm),code=sm_$(sm)))
 
-event_sampling: event_sampling.$(OBJ)
-	$(NVCC) $(NVCC_COMPILER) $(NVCCFLAGS) -o $@ event_sampling.$(OBJ) $(LIBS) $(INCLUDES)
+hardware_counter: hardware_counter.$(OBJ)
+	$(NVCC) $(NVCC_COMPILER) $(NVCCFLAGS) -o $@ hardware_counter.$(OBJ) $(LIBS) $(INCLUDES)
 
-event_sampling.$(OBJ): event_sampling.cu
+hardware_counter.$(OBJ): hardware_counter.cu
 	$(NVCC) $(NVCC_COMPILER) $(NVCCFLAGS) $(GENCODE_FLAGS) -c $(INCLUDES) $<
 
-run: event_sampling
+run: hardware_counter
 	./$<
 
 clean:
-	rm -f event_sampling event_sampling.$(OBJ)
+	rm -f hardware_counter hardware_counter.$(OBJ)

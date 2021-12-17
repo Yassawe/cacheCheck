@@ -4,16 +4,38 @@
 #include <unistd.h>
 
 
+#define CHECK_CU_ERROR(err, cufunc)                                     \
+  if (err != CUDA_SUCCESS)                                              \
+    {                                                                   \
+      printf ("Error %d for CUDA Driver API function '%s'.\n",          \
+              err, cufunc);                                             \
+      exit(-1);                                                         \
+    }
+
+#define CHECK_CUPTI_ERROR(err, cuptifunc)                       \
+  if (err != CUPTI_SUCCESS)                                     \
+    {                                                           \
+      const char *errstr;                                       \
+      cuptiGetResultString(err, &errstr);                       \
+      printf ("%s:%d:Error %s for CUPTI API function '%s'.\n",  \
+              __FILE__, __LINE__, errstr, cuptifunc);           \
+      exit(-1);                                                 \
+    }
+
+
 int main(int argc, char *argv[])
 {
-  CUcontext context;
-  CUdevice device;
 
   CUptiResult cuptiErr;
+
+  CUcontext context;
+  CUdevice device;
   CUpti_EventGroup eventGroup;
   CUpti_EventID eventId;
 
   const char *eventName;
+  int duration;
+  int deviceNum;
 
   size_t bytesRead, valueSize;
   uint32_t numInstances = 0, j = 0;
@@ -33,6 +55,14 @@ int main(int argc, char *argv[])
     eventName = "inst_executed";
   }
 
+  if (argc > 3) {
+    duration = atoi(argv[3]);
+  }
+  else {
+    duration = 30;
+  }
+
+  cuInit(0);
   
   cuDeviceGet(&device, deviceNum);
 
@@ -53,10 +83,10 @@ int main(int argc, char *argv[])
 
   cuptiEventGroupSetAttribute(eventGroup, CUPTI_EVENT_GROUP_ATTR_PROFILE_ALL_DOMAIN_INSTANCES, sizeof(profile_all), &profile_all);
   
-  cuptiErr = cuptiEventGroupEnable(eventGroup);
+  cuptiEventGroupEnable(eventGroup);
  
   valueSize = sizeof(numInstances);
-  cuptiErr = cuptiEventGroupGetAttribute(eventGroup, CUPTI_EVENT_GROUP_ATTR_INSTANCE_COUNT, &valueSize, &numInstances);
+  cuptiEventGroupGetAttribute(eventGroup, CUPTI_EVENT_GROUP_ATTR_INSTANCE_COUNT, &valueSize, &numInstances);
 
   bytesRead = sizeof(uint64_t) * numInstances;
   eventValues = (uint64_t *) malloc(bytesRead);
@@ -69,9 +99,7 @@ int main(int argc, char *argv[])
   int i = 0;
 
   do {
-    cuptiErr = cuptiEventGroupReadEvent(eventGroup,
-                                        CUPTI_EVENT_READ_FLAG_NONE,
-                                        eventId, &bytesRead, eventValues);
+    cuptiEventGroupReadEvent(eventGroup, CUPTI_EVENT_READ_FLAG_NONE, eventId, &bytesRead, eventValues);
   
     if (bytesRead != (sizeof(uint64_t) * numInstances)) {
       printf("Failed to read value for \"%s\"\n", eventName);
@@ -84,11 +112,11 @@ int main(int argc, char *argv[])
     printf("%s: %llu\n", eventName, (unsigned long long)eventVal);
     sleep(1);
     i+=1;
-  } while (i<=30);
+  } while (i<=duration);
 
-  cuptiErr = cuptiEventGroupDisable(eventGroup);
+  cuptiEventGroupDisable(eventGroup);
 
-  cuptiErr = cuptiEventGroupDestroy(eventGroup);
+  cuptiEventGroupDestroy(eventGroup);
 
   free(eventValues);
   return 0;
