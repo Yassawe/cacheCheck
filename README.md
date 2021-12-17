@@ -8,11 +8,11 @@ nvprof --devices 1 --profile-child-processes --print-gpu-trace --normalized-time
 
 multi gpu:
 
-nvprof --devices 0,1,2,3 --kernels '^((?!nccl).)*$' --profile-child-processes --print-gpu-trace --normalized-time-unit ms --profile-from-start off --concurrent-kernels on --metrics l2_tex_write_hit_rate  --csv --log-file ./csv/hitrates/101_mw%p.csv python3 multigpu.py
+nvprof --devices 1 --profile-child-processes --print-gpu-trace --trace gpu --normalized-time-unit ms --profile-from-start off --concurrent-kernels on --csv --log-file ./csv/vgg16/trace/nonoverlap%p.csv python3 multigpu.py
 
 ________________________________________________
 
-
+--kernels '^((?!nccl).)*$'
 
 metrics:
 
@@ -52,3 +52,8 @@ l2_subp1_total_write_sector_queries
 
 
 _________
+
+
+
+
+ncu --devices 0,1,2,3 --kernel-name regex:'^((?!nccl).)*$' --target-processes all --csv --replay-mode application --page details --nvtx --profile-from-start no --metrics lts__t_sectors_op_read.sum python3 multigpu.py

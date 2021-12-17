@@ -31,7 +31,7 @@ def train(gpu):
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
     train_sampler = torch.utils.data.distributed.DistributedSampler(trainset)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=32, sampler=train_sampler,
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=1, sampler=train_sampler,
                                               shuffle=False, num_workers=0)
 
    

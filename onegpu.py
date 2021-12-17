@@ -29,8 +29,8 @@ def main():
     subset = torch.utils.data.Subset(trainset, list(range(int(len(trainset)/4))))
 
     train_sampler = torch.utils.data.RandomSampler(subset)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=32, sampler=train_sampler,
-                                              shuffle=False, num_workers=4)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=1, sampler=train_sampler,
+                                              shuffle=False, num_workers=0)
    
     criterion = nn.CrossEntropyLoss().to(gpu)
    
