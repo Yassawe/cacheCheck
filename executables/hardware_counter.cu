@@ -59,8 +59,6 @@ int main(int argc, char *argv[])
     eventName = "inst_executed";
   }
 
-  printf("%s", eventName);
-
   if (argc > 3) {
     sampletime = atoi(argv[3]);
   }

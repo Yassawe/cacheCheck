@@ -28,7 +28,7 @@ def hardware_counter(device: str, event: str, sampletime: str, duration: str):
 
 def train(gpu):
 
-    BUCKET_SIZE = 25
+    BUCKET_SIZE = 800
     BATCH_SIZE = 1
 
     torch.manual_seed(0)
@@ -72,10 +72,13 @@ def train(gpu):
 
         if i==target_iter and gpu==target_gpu:
             
-            x = threading.Thread(target=hardware_counter, args=(str(target_gpu), "inst_executed", "1000", "30"))
+            x = threading.Thread(target=hardware_counter, args=(str(target_gpu), "l2_subp0_read_tex_hit_sectors", "1000", "15"))
             x.start()
-            time.sleep(1)
+            time.sleep(5)
         
+        if i==target_iter and gpu==target_gpu:
+            print("doing. gpu{}".format(gpu))
+
         loss.backward()
         optimizer.step()
 
