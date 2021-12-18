@@ -13,6 +13,8 @@ import torchvision.transforms as T
 from torch.nn.parallel import DistributedDataParallel as DDP
 import time
 import threading
+import argparse
+
 
 from ctypes import *
 
@@ -26,10 +28,10 @@ def hardware_counter(device: str, event: str, sampletime: str, duration: str):
     args = (c_char_p * 5)(str.encode("pad"), str.encode(device),str.encode(event),str.encode(sampletime), str.encode(duration))
     dll.main(len(args),args)
 
-def train(gpu):
+def train(gpu, arguments):
 
-    BUCKET_SIZE = 800
-    BATCH_SIZE = 1
+    BUCKET_SIZE = arguments['bucket']
+    BATCH_SIZE = arguments['batch']
 
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
@@ -56,7 +58,7 @@ def train(gpu):
     
     model.train()
 
-    target_gpu = 1
+    target_gpu = int(arguments['device'])
     target_iter = 5
     for i, data in enumerate(trainloader, 0):
 
@@ -71,8 +73,7 @@ def train(gpu):
         optimizer.zero_grad()
 
         if i==target_iter and gpu==target_gpu:
-            
-            x = threading.Thread(target=hardware_counter, args=(str(target_gpu), "l2_subp0_read_tex_hit_sectors", "1000", "15"))
+            x = threading.Thread(target=hardware_counter, args=(str(target_gpu), arguments['event'], arguments['sample'], arguments['duration']))
             x.start()
             time.sleep(5)
         
@@ -91,19 +92,29 @@ def train(gpu):
         if i == target_iter:
             break
 
-def init_process(gpu, size, fn, backend='nccl'):
+def init_process(gpu, size, args, fn):
     """ Initialize the distributed environment. """
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '8888'
-    dist.init_process_group(backend, rank=gpu, world_size=size)
-    fn(gpu)
+    dist.init_process_group('nccl', rank=gpu, world_size=size)
+    fn(gpu, args)
 
 if __name__=="__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--bucket', type=int, default=25)
+    parser.add_argument('--batch', type=int, default=32)
+    parser.add_argument('--device', type=str, default='1')
+    parser.add_argument('--event', type=str, default='inst_executed')
+    parser.add_argument('--sample', type=str, default= '1000')
+    parser.add_argument('--duration', type=str, default='10')
+    args = vars(parser.parse_args())
+
+
     processes = []
     size = 4
     mp.set_start_method("spawn")
     for gpu in [0,1,2,3]:
-        p = mp.Process(target=init_process, args=(gpu, size, train))
+        p = mp.Process(target=init_process, args=(gpu, size, args, train))
         p.start()
         processes.append(p)
 
