@@ -22,9 +22,10 @@
       exit(-1);                                                 \
     }
 
-
 int main(int argc, char *argv[])
 {
+
+  // [device] [event_name] [sampletime in ms] [duration in multiples of sampletime]
 
   CUptiResult cuptiErr;
   CUresult err;
@@ -36,6 +37,7 @@ int main(int argc, char *argv[])
   CUpti_EventID eventId;
 
   const char *eventName;
+  int sampletime;
   int duration;
   int deviceNum;
 
@@ -48,21 +50,30 @@ int main(int argc, char *argv[])
   if (argc > 1)
     deviceNum = atoi(argv[1]);
   else
-    deviceNum = 0;
+    deviceNum = 1;
 
   if (argc > 2) {
     eventName = argv[2];
   }
   else {
-    eventName = "inst_executed";
+    eventName = "l2_subp0_read_sector_misses";
   }
 
   if (argc > 3) {
-    duration = atoi(argv[3]);
+    sampletime = atoi(argv[3]);
   }
   else {
-    duration = 10;
+    sampletime = 500;
   }
+  
+  if (argc > 4) {
+    duration = atoi(argv[4]);
+  }
+  else {
+    duration = 100;
+  }
+
+
 
   err = cuInit(0);
   CHECK_CU_ERROR(err, "cuInit");
@@ -70,10 +81,9 @@ int main(int argc, char *argv[])
   err = cuDeviceGet(&device, deviceNum);
   CHECK_CU_ERROR(err, "cuDeviceGet");
 
-  //err = cuDevicePrimaryCtxRetain(&context, device);
-
-  err = cuCtxCreate(&context, 0, device);
-  CHECK_CU_ERROR(err, "cuCtxCreate");
+  err = cuDevicePrimaryCtxRetain(&context, device);
+  //err = cuCtxCreate(&context, 0, device);
+  CHECK_CU_ERROR(err, "Context");
 
   cuptiErr = cuptiSetEventCollectionMode(context,CUPTI_EVENT_COLLECTION_MODE_CONTINUOUS);
   CHECK_CUPTI_ERROR(cuptiErr, "cuptiSetEventCollectionMode");
@@ -125,7 +135,7 @@ int main(int argc, char *argv[])
       eventVal += eventValues[j];
     }
     printf("%s: %llu\n", eventName, (unsigned long long)eventVal);
-    sleep(1);
+    usleep(sampletime*1000);
     i+=1;
   } while (i<=duration);
 

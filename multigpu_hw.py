@@ -13,15 +13,24 @@ import torchvision.transforms as T
 from torch.nn.parallel import DistributedDataParallel as DDP
 import time
 import threading
-import _thread
+
+from ctypes import *
+
 
 # import torch.cuda.profiler as profiler
 
+def hardware_counter(device: str, event: str, sampletime: str, duration: str):
+    dll = cdll.LoadLibrary('./executables/hardware_counter.so')
+    # dll.main.restype = c_int
+    # dll.main.argtypes = c_int,POINTER(c_char_p)
+    # args = (c_char_p * 4)(str.encode(device),str.encode(event),str.encode(sampletime), str.encode(duration))
+    # dll.main(len(args)+1, args)
+    dll.main()
 
 def train(gpu):
 
     BUCKET_SIZE = 25
-    BATCH_SIZE = 32
+    BATCH_SIZE = 1
 
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
@@ -63,21 +72,23 @@ def train(gpu):
         optimizer.zero_grad()
 
         if i==target_iter and gpu==target_gpu:
-            _thread.start_new_thread(os.system, ('./executables/hardware_counter 1 inst_executed 30',))
-            time.sleep(5)
+            
+            x = threading.Thread(target=hardware_counter, args=(str(target_gpu), "inst_executed", "1000", "30"))
+            x.start()
+            #time.sleep(1)
         
         loss.backward()
+
+        if i==target_iter and gpu==target_gpu:
+            x.join()
+            print("done. gpu{}".format(gpu))
         
         optimizer.step()
 
-        # if i==target_iter:
-        #     print("done. gpu{}".format(gpu))
-        
         torch.cuda.synchronize(device=gpu)
 
         if i == target_iter:
             break
-    #join a thread
 
 def init_process(gpu, size, fn, backend='nccl'):
     """ Initialize the distributed environment. """

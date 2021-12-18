@@ -1,5 +1,4 @@
 from ctypes import *
-cdll.LoadLibrary('libcupti.so.10.1')
-libc = CDLL('libcupti.so.10.1')
+dll = cdll.LoadLibrary('./executables/hardware_counter.so')
 
-print(libc)
+dll.main()
