@@ -23,7 +23,7 @@ def train(gpu):
 
     model = models.vgg16(pretrained=False).to(gpu)
     
-    model = DDP(model, device_ids=[gpu], output_device=0, broadcast_buffers=True, bucket_cap_mb=800) #REPLACE THIS LINE
+    model = DDP(model, device_ids=[gpu], output_device=0, broadcast_buffers=True, bucket_cap_mb=25) #REPLACE THIS LINE
     
 
     transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])

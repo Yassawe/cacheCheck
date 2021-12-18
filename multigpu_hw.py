@@ -48,7 +48,7 @@ def train(gpu):
     
     model.train()
 
-    target_gpu = 0
+    target_gpu = 1
     target_iter = 5
     for i, data in enumerate(trainloader, 0):
 
@@ -63,19 +63,19 @@ def train(gpu):
         optimizer.zero_grad()
 
         if i==target_iter and gpu==target_gpu:
-            _thread.start_new_thread(os.system, ('./executables/hardware_counter',))
+            _thread.start_new_thread(os.system, ('./executables/hardware_counter 1 inst_executed 30',))
             time.sleep(5)
         
         loss.backward()
         
         optimizer.step()
 
-        if i==target_iter:
-            print("done. gpu{}".format(gpu))
+        # if i==target_iter:
+        #     print("done. gpu{}".format(gpu))
         
         torch.cuda.synchronize(device=gpu)
 
-        if i == 5:
+        if i == target_iter:
             break
     #join a thread
 

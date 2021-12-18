@@ -3,8 +3,33 @@
 #include <cupti_events.h>
 #include <unistd.h>
 
+
+#define CHECK_CU_ERROR(err, cufunc)                                     \
+  if (err != CUDA_SUCCESS)                                              \
+    {                                                                   \
+      printf ("Error %d for CUDA Driver API function '%s'.\n",          \
+              err, cufunc);                                             \
+      exit(-1);                                                         \
+    }
+
+#define CHECK_CUPTI_ERROR(err, cuptifunc)                       \
+  if (err != CUPTI_SUCCESS)                                     \
+    {                                                           \
+      const char *errstr;                                       \
+      cuptiGetResultString(err, &errstr);                       \
+      printf ("%s:%d:Error %s for CUPTI API function '%s'.\n",  \
+              __FILE__, __LINE__, errstr, cuptifunc);           \
+      exit(-1);                                                 \
+    }
+
+
 int main(int argc, char *argv[])
 {
+
+  CUptiResult cuptiErr;
+  CUresult err;
+
+
   CUcontext context;
   CUdevice device;
   CUpti_EventGroup eventGroup;
@@ -36,33 +61,46 @@ int main(int argc, char *argv[])
     duration = atoi(argv[3]);
   }
   else {
-    duration = 30;
+    duration = 10;
   }
 
-  cuInit(0);
+  err = cuInit(0);
+  CHECK_CU_ERROR(err, "cuInit");
 
-  cuDeviceGet(&device, deviceNum);
+  err = cuDeviceGet(&device, deviceNum);
+  CHECK_CU_ERROR(err, "cuDeviceGet");
 
-  cuDevicePrimaryCtxRetain(&context, device);
+  //err = cuDevicePrimaryCtxRetain(&context, device);
 
-  cuptiSetEventCollectionMode(context, CUPTI_EVENT_COLLECTION_MODE_CONTINUOUS);
+  err = cuCtxCreate(&context, 0, device);
+  CHECK_CU_ERROR(err, "cuCtxCreate");
+
+  cuptiErr = cuptiSetEventCollectionMode(context,CUPTI_EVENT_COLLECTION_MODE_CONTINUOUS);
+  CHECK_CUPTI_ERROR(cuptiErr, "cuptiSetEventCollectionMode");
 
 
-  cuptiEventGroupCreate(context, &eventGroup, 0);
+  cuptiErr = cuptiEventGroupCreate(context, &eventGroup, 0);
+  CHECK_CUPTI_ERROR(cuptiErr, "cuptiEventGroupCreate");
 
 
-  cuptiEventGetIdFromName(device, eventName, &eventId);
+  cuptiErr = cuptiEventGetIdFromName(device, eventName, &eventId);
+  CHECK_CUPTI_ERROR(cuptiErr, "cuptiEventGetIdFromName");
   
 
-  cuptiEventGroupAddEvent(eventGroup, eventId);
+  cuptiErr = cuptiEventGroupAddEvent(eventGroup, eventId);
+  CHECK_CUPTI_ERROR(cuptiErr, "cuptiEventGroupAddEvent");
   
 
-  cuptiEventGroupSetAttribute(eventGroup, CUPTI_EVENT_GROUP_ATTR_PROFILE_ALL_DOMAIN_INSTANCES, sizeof(profile_all), &profile_all);
+  cuptiErr = cuptiEventGroupSetAttribute(eventGroup, CUPTI_EVENT_GROUP_ATTR_PROFILE_ALL_DOMAIN_INSTANCES, sizeof(profile_all), &profile_all);
+  CHECK_CUPTI_ERROR(cuptiErr, "cuptiEventGroupSetAttribute");
   
-  cuptiEventGroupEnable(eventGroup);
+  cuptiErr = cuptiEventGroupEnable(eventGroup);
+  CHECK_CUPTI_ERROR(cuptiErr, "cuptiEventGroupEnable");
  
   valueSize = sizeof(numInstances);
-  cuptiEventGroupGetAttribute(eventGroup, CUPTI_EVENT_GROUP_ATTR_INSTANCE_COUNT, &valueSize, &numInstances);
+  
+  cuptiErr = cuptiEventGroupGetAttribute(eventGroup,CUPTI_EVENT_GROUP_ATTR_INSTANCE_COUNT,&valueSize, &numInstances);
+  CHECK_CUPTI_ERROR(cuptiErr, "cuptiEventGroupGetAttribute");
 
   bytesRead = sizeof(uint64_t) * numInstances;
   eventValues = (uint64_t *) malloc(bytesRead);
@@ -75,8 +113,9 @@ int main(int argc, char *argv[])
   int i = 0;
 
   do {
-    cuptiEventGroupReadEvent(eventGroup, CUPTI_EVENT_READ_FLAG_NONE, eventId, &bytesRead, eventValues);
-  
+    cuptiErr = cuptiEventGroupReadEvent(eventGroup, CUPTI_EVENT_READ_FLAG_NONE, eventId, &bytesRead, eventValues);
+    CHECK_CUPTI_ERROR(cuptiErr, "cuptiEventGroupReadEvent");
+
     if (bytesRead != (sizeof(uint64_t) * numInstances)) {
       printf("Failed to read value for \"%s\"\n", eventName);
       exit(-1);

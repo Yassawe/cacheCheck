@@ -8,7 +8,7 @@ nvprof --devices 1 --profile-child-processes --print-gpu-trace --normalized-time
 
 multi gpu:
 
-nvprof --devices 1 --profile-child-processes --print-gpu-trace --trace gpu --normalized-time-unit ms --profile-from-start off --concurrent-kernels on --csv --log-file ./csv/vgg16/trace/nonoverlap%p.csv python3 multigpu.py
+nvprof --devices 1 --events inst_executed --profile-child-processes --print-gpu-trace --trace gpu --normalized-time-unit ms --profile-from-start off --concurrent-kernels on --csv --log-file ./csv/vgg16/trace/overlap%p.csv python3 multigpu.py
 
 ________________________________________________
 
