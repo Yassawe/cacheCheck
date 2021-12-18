@@ -50,14 +50,16 @@ int main(int argc, char *argv[])
   if (argc > 1)
     deviceNum = atoi(argv[1]);
   else
-    deviceNum = 1;
+    deviceNum = 0;
 
   if (argc > 2) {
     eventName = argv[2];
   }
   else {
-    eventName = "l2_subp0_read_sector_misses";
+    eventName = "inst_executed";
   }
+
+  printf("%s", eventName);
 
   if (argc > 3) {
     sampletime = atoi(argv[3]);

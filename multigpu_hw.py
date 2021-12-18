@@ -21,11 +21,10 @@ from ctypes import *
 
 def hardware_counter(device: str, event: str, sampletime: str, duration: str):
     dll = cdll.LoadLibrary('./executables/hardware_counter.so')
-    # dll.main.restype = c_int
-    # dll.main.argtypes = c_int,POINTER(c_char_p)
-    # args = (c_char_p * 4)(str.encode(device),str.encode(event),str.encode(sampletime), str.encode(duration))
-    # dll.main(len(args)+1, args)
-    dll.main()
+    dll.main.restype = c_int
+    dll.main.argtypes = c_int,POINTER(c_char_p)
+    args = (c_char_p * 5)(str.encode("pad"), str.encode(device),str.encode(event),str.encode(sampletime), str.encode(duration))
+    dll.main(len(args),args)
 
 def train(gpu):
 
@@ -75,15 +74,14 @@ def train(gpu):
             
             x = threading.Thread(target=hardware_counter, args=(str(target_gpu), "inst_executed", "1000", "30"))
             x.start()
-            #time.sleep(1)
+            time.sleep(1)
         
         loss.backward()
+        optimizer.step()
 
         if i==target_iter and gpu==target_gpu:
             x.join()
             print("done. gpu{}".format(gpu))
-        
-        optimizer.step()
 
         torch.cuda.synchronize(device=gpu)
 
